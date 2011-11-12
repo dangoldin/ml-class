@@ -30,6 +30,15 @@ J = 0;
 Theta1_grad = zeros(size(Theta1));
 Theta2_grad = zeros(size(Theta2));
 
+% Add ones to the X data matrix
+X_new = [ones(m, 1) X];
+
+% The expanded Y vector
+y_new = zeros(m, num_labels);
+for i = 1:m
+	y_new(i,y(i)) = 1;
+end
+
 % ====================== YOUR CODE HERE ======================
 % Instructions: You should complete the code by working through the
 %               following parts.
@@ -62,25 +71,47 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
+a = sigmoid(X_new * Theta1');
+a = [ones(size(a,1),1) a];
+b = sigmoid(a * Theta2');
 
+%J = sum(y_new * log(b)' - (1-y_new) * log(1-b)');
 
+J = 0;
+for i = 1:m
+	J = J + -y_new(i,:) * log(b(i,:))'-(1-y_new(i,:))*log(1-b(i,:))';
+end
+J = 1/m * J;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% Regularization
+t1 = Theta1(:, 2:size(Theta1,2));
+t2 = Theta2(:, 2:size(Theta2,2));
+J = J + lambda/(2*m) * ( sum(sum(t1 .* t1)) + sum(sum(t2 .* t2)) );
 
 % -------------------------------------------------------------
+% Gradient piece
+
+for i = 1:m
+	a1 = X_new(i,:);
+	z2 = a1 * Theta1';
+	%z2 = [1; z2']';
+	a2 = [1; sigmoid(z2)']';
+	z3 = a2 * Theta2';
+	a3 = sigmoid(z3);
+
+	d3 = a3' - y_new(i,:)';
+	d2 = Theta2' * d3 .* [1; sigmoidGradient(z2)'];
+	d2 = d2(2:end);
+	Theta2_grad = Theta2_grad + d3 * a2;
+	Theta1_grad = Theta1_grad + d2 * a1;
+end
+
+% Regularize Gradient
+Theta1_grad = 1/m * Theta1_grad;
+Theta2_grad = 1/m * Theta2_grad;
+
+Theta1_grad(:,2:end) = Theta1_grad(:,2:end) + lambda/m * Theta1(:,2:end);
+Theta2_grad(:,2:end) = Theta2_grad(:,2:end) + lambda/m * Theta2(:,2:end);
 
 % =========================================================================
 
